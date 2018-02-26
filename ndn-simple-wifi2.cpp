@@ -138,6 +138,11 @@ main(int argc, char* argv[])
   Config::Connect ("/NodeList/*/$ns3::MobilityModel/CourseChange",
                    MakeBoundCallback (&CourseChange, &os));
 
+  NodeContainer TL;
+  TL.Create(1);
+  Ptr<Node> n = TL.Get(0);
+  NetDeviceContainer wifiTL = wifi.Install(wifiPhyHelper, wifiMacHelper, TL);
+  ns3::AnimationInterface::SetConstantPosition (n, 500, 500, 0);
   // 3. Install NDN stack
   NS_LOG_INFO("Installing NDN stack");
   ndn::StackHelper ndnHelper;
@@ -146,6 +151,7 @@ main(int argc, char* argv[])
   ndnHelper.SetOldContentStore("ns3::ndn::cs::Lru", "MaxSize", "1000");
  // ndnHelper.SetDefaultRoutes(true);
   ndnHelper.Install(stas);
+  ndnHelper.Install(TL);
 
   // Set BestRoute strategy
   ndn::StrategyChoiceHelper::Install(stas, "/", "/localhost/nfd/strategy/multicast");
@@ -160,7 +166,7 @@ main(int argc, char* argv[])
   ndn::AppHelper consumerHelper("ns3::ndn::ConsumerCbr");
   consumerHelper.SetPrefix("/test/prefix");
   consumerHelper.SetAttribute("Frequency", DoubleValue(10.0));
-  consumerHelper.Install(stas.Get(2));
+  consumerHelper.Install(TL.Get(0));
 
   ndn::AppHelper producerHelper("ns3::ndn::Producer");
   producerHelper.SetPrefix("/test/prefix");
